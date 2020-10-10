@@ -3,7 +3,7 @@ package com.example.koleodemoapp.di
 import com.example.koleodemoapp.repository.IRepository
 import com.example.koleodemoapp.repository.RemoteRepository
 import com.example.koleodemoapp.services.KoleoService
-import com.example.koleodemoapp.services.MyInterceptor
+import com.example.koleodemoapp.services.HeaderInterceptor
 import dagger.Module
 import dagger.Provides
 import okhttp3.OkHttpClient
@@ -22,7 +22,7 @@ class ApplicationModule {
     fun provideOkHttpClient(): OkHttpClient =
         OkHttpClient.Builder()
             //.cache(cache)
-            .addInterceptor(MyInterceptor())
+            .addInterceptor(HeaderInterceptor())
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
