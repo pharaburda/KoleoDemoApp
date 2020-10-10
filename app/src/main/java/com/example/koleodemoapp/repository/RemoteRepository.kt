@@ -1,15 +1,12 @@
 package com.example.koleodemoapp.repository
 
-import android.location.Location
 import com.example.koleodemoapp.entities.Destination
+import com.example.koleodemoapp.services.KoleoService
+import io.reactivex.rxjava3.core.Maybe
+import javax.inject.Inject
 
-class RemoteRepository : IRepository {
-    override fun getDestinationsList(): List<Destination> {
-        return listOf(
-            Destination("Warsaw", Location("provider")),
-            Destination("Siedlce", Location("provider")),
-            Destination("Crackow", Location("provider")),
-            Destination("Gdansk", Location("provider"))
-        )
+class RemoteRepository @Inject constructor(private val service: KoleoService) : IRepository {
+    override fun getDestinationsList(): Maybe<List<Destination>> {
+        return service.getListOfStations()
     }
 }
