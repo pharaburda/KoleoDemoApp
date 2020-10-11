@@ -1,11 +1,14 @@
 package com.example.koleodemoapp.di
 
+import android.app.Application
+import android.content.Context
 import com.example.koleodemoapp.repository.IRepository
 import com.example.koleodemoapp.repository.RemoteRepository
 import com.example.koleodemoapp.services.KoleoService
 import com.example.koleodemoapp.services.HeaderInterceptor
 import dagger.Module
 import dagger.Provides
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -13,22 +16,27 @@ import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 
 @Module
-class ApplicationModule {
+class ApplicationModule(private val application: Application) {
     @Provides
     fun provideRepository(service: KoleoService): IRepository = RemoteRepository(service)
 
-    //@Singleton
     @Provides
-    fun provideOkHttpClient(): OkHttpClient =
+    fun provideApplicationContext(): Context = application.applicationContext
+
+    @Provides
+    fun provideCache(context: Context): Cache =
+        Cache(context.cacheDir, (5 * 1024 * 1024).toLong())
+
+    @Provides
+    fun provideOkHttpClient(cache: Cache): OkHttpClient =
         OkHttpClient.Builder()
-            //.cache(cache)
+            .cache(cache)
             .addInterceptor(HeaderInterceptor())
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
             .build()
 
-    //@Singleton
     @Provides
     fun provideKoleoService(client: OkHttpClient): KoleoService {
         return Retrofit.Builder()

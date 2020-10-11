@@ -27,7 +27,7 @@ class MainFragment : Fragment() {
     @Inject
     lateinit var viewModel: MainViewModel
     private lateinit var binding: MainFragmentBinding
-    private lateinit var destinationsListDisposable: Disposable
+    private var destinationsListDisposable: Disposable? = null
 
     private var firstDestinationList = mutableListOf<Destination>()
     private var secondDestinationList = mutableListOf<Destination>()
@@ -39,7 +39,7 @@ class MainFragment : Fragment() {
     private var secondChosenDestination: Destination? = null
 
     private val submittingSubject: PublishSubject<Unit> = PublishSubject.create()
-    private lateinit var submittingSubjectDisposable: Disposable
+    private var submittingSubjectDisposable: Disposable? = null
 
 
     override fun onCreateView(
@@ -56,7 +56,6 @@ class MainFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         (activity?.applicationContext as MainApplication).appComponent.inject(this)
-        //AndroidInjection.inject(this)
     }
 
     override fun onStart() {
@@ -77,7 +76,7 @@ class MainFragment : Fragment() {
             val firstDestination = firstChosenDestination
             val secondDestination = secondChosenDestination
             if (firstDestination != null && secondDestination != null) {
-                 val distanceInKm = viewModel.calculateDistanceBetweenDestinations(
+                val distanceInKm = viewModel.calculateDistanceBetweenDestinations(
                     firstDestination.latitude,
                     firstDestination.longitude,
                     secondDestination.latitude,
@@ -94,36 +93,46 @@ class MainFragment : Fragment() {
         binding.scrollFirstSuggestions.adapter = this.firstDestinationAdapter
         binding.scrollSecondSuggestions.adapter = this.secondDestinationAdapter
 
-        val onFirstSearchClickListener = {
+        val loadDestinationsListToFirstAdapter = {
             Timber.d("TEST first search click")
             if (firstDestinationList.isEmpty()) {
                 destinationsListDisposable = viewModel.getDestinationsLists()
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { destinations ->
-                        firstDestinationList = destinations.toMutableList()
-                        firstDestinationList.sortWith(kotlin.Comparator { dest1, dest2 ->
-                            (dest2.hits ?: 0) - (dest1.hits ?: 0)
-                        })
-                        firstDestinationAdapter.addAll(firstDestinationList)
-                    }
+                    .subscribe(
+                        { destinations ->
+                            firstDestinationList = destinations.toMutableList()
+                            firstDestinationList.sortWith(kotlin.Comparator { dest1, dest2 ->
+                                (dest2.hits ?: 0) - (dest1.hits ?: 0)
+                            })
+                            firstDestinationAdapter.addAll(firstDestinationList)
+                        },
+                        { error ->
+                            Timber.e(error)
+                            Toast.makeText(context, "Some error occurred", Toast.LENGTH_LONG).show()
+                        }
+                    )
             } else {
                 firstDestinationAdapter.clear()
                 firstDestinationAdapter.addAll(firstDestinationList)
             }
         }
 
-        val onSecondSearchClickListener = {
+        val loadDestinationsListToSecondAdapter = {
             Timber.d("TEST second search click")
             if (secondDestinationList.isEmpty()) {
                 destinationsListDisposable = viewModel.getDestinationsLists()
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { destinations ->
+                    .subscribe({ destinations ->
                         secondDestinationList = destinations.toMutableList()
                         secondDestinationList.sortWith(kotlin.Comparator { dest1, dest2 ->
                             (dest2.hits ?: 0) - (dest1.hits ?: 0)
                         })
                         secondDestinationAdapter.addAll(secondDestinationList)
-                    }
+                    },
+                        { error ->
+                            Timber.e(error)
+                            Toast.makeText(context, "Some error occurred", Toast.LENGTH_LONG).show()
+                        })
             } else {
                 secondDestinationAdapter.clear()
                 secondDestinationAdapter.addAll(secondDestinationList)
@@ -150,7 +159,7 @@ class MainFragment : Fragment() {
                 firstDestinationAdapter.filter.filter(newText)
                 binding.scrollFirstSuggestions.visibility = View.VISIBLE
                 if (firstDestinationAdapter.isEmpty) {
-                    firstDestinationAdapter.addAll(firstDestinationList)
+                    loadDestinationsListToFirstAdapter.invoke()
                 }
                 return false
             }
@@ -178,7 +187,7 @@ class MainFragment : Fragment() {
                 secondDestinationAdapter.filter.filter(newText)
                 binding.scrollSecondSuggestions.visibility = View.VISIBLE
                 if (secondDestinationAdapter.isEmpty) {
-                    secondDestinationAdapter.addAll(secondDestinationList)
+                    loadDestinationsListToSecondAdapter.invoke()
                 }
                 return false
             }
@@ -214,7 +223,7 @@ class MainFragment : Fragment() {
         }
 
         binding.searchFirstStation.setOnSearchClickListener {
-            onFirstSearchClickListener.invoke()
+            loadDestinationsListToFirstAdapter.invoke()
         }
         binding.searchFirstStation.setOnQueryTextListener(onFirstSearchQueryTextListener)
         binding.scrollFirstSuggestions.onItemClickListener = onFirstScrollItemClickListener
@@ -228,7 +237,7 @@ class MainFragment : Fragment() {
         }
 
         binding.searchSecondStation.setOnSearchClickListener {
-            onSecondSearchClickListener.invoke()
+            loadDestinationsListToSecondAdapter.invoke()
         }
         binding.searchSecondStation.setOnQueryTextListener(onSecondSearchQueryTextListener)
         binding.scrollSecondSuggestions.onItemClickListener = onSecondScrollItemClickListener
@@ -242,9 +251,10 @@ class MainFragment : Fragment() {
         }
     }
 
+
     override fun onDestroy() {
-        destinationsListDisposable.dispose()
-        submittingSubjectDisposable.dispose()
+        destinationsListDisposable?.dispose()
+        submittingSubjectDisposable?.dispose()
         super.onDestroy()
     }
 }
