@@ -25,7 +25,7 @@ class ApplicationModule(private val application: Application) {
 
     @Provides
     fun provideCache(context: Context): Cache =
-        Cache(context.cacheDir, (5 * 1024 * 1024).toLong())
+        Cache(context.cacheDir, CACHE_SIZE)
 
     @Provides
     fun provideOkHttpClient(cache: Cache): OkHttpClient =
@@ -40,7 +40,7 @@ class ApplicationModule(private val application: Application) {
     @Provides
     fun provideKoleoService(client: OkHttpClient): KoleoService {
         return Retrofit.Builder()
-            .baseUrl("https://koleo.pl/api/v2/main/")
+            .baseUrl(BASE_URL)
             .client(client)
             .addConverterFactory(
                 GsonConverterFactory.create()
@@ -49,6 +49,11 @@ class ApplicationModule(private val application: Application) {
                 RxJava3CallAdapterFactory.create())
             .build()
             .create(KoleoService::class.java)
+    }
+
+    companion object {
+        const val CACHE_SIZE: Long = 5 * 1024 * 1024
+        const val BASE_URL = "https://koleo.pl/api/v2/main/"
     }
 
 }

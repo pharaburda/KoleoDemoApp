@@ -7,11 +7,7 @@ import io.reactivex.rxjava3.core.Maybe
 import javax.inject.Inject
 
 class RemoteRepository @Inject constructor(private val service: KoleoService) : IRepository {
-    override fun getDestinationsList(): Maybe<List<Destination>> {
-        return service.getListOfStations()
-    }
+    override fun getDestinationsList(): Maybe<List<Destination>> = service.getListOfStations()
 
-    override fun getKeywordsList(): Maybe<List<Keyword>> {
-        return service.getListOfStationKeywords()
-    }
+    override fun getKeywordsList(): Maybe<List<Keyword>> = service.getListOfStationKeywords()
 }

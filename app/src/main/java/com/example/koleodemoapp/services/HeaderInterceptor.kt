@@ -7,8 +7,12 @@ class HeaderInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
         val requestBuilder = originalRequest.newBuilder()
-            .header("X-KOLEO-Version", "1")
+            .header(HEADER_VERSION, "1")
         val request = requestBuilder.build()
         return chain.proceed(request)
+    }
+
+    companion object {
+        const val HEADER_VERSION = "X-KOLEO-Version"
     }
 }

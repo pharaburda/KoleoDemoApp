@@ -94,7 +94,6 @@ class MainFragment : Fragment() {
         binding.scrollSecondSuggestions.adapter = this.secondDestinationAdapter
 
         val loadDestinationsListToFirstAdapter = {
-            Timber.d("TEST first search click")
             if (firstDestinationList.isEmpty()) {
                 destinationsListDisposable = viewModel.getDestinationsLists()
                     .observeOn(AndroidSchedulers.mainThread())
@@ -118,7 +117,6 @@ class MainFragment : Fragment() {
         }
 
         val loadDestinationsListToSecondAdapter = {
-            Timber.d("TEST second search click")
             if (secondDestinationList.isEmpty()) {
                 destinationsListDisposable = viewModel.getDestinationsLists()
                     .observeOn(AndroidSchedulers.mainThread())
@@ -155,7 +153,6 @@ class MainFragment : Fragment() {
 
         val onFirstSearchQueryTextListener = object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String?): Boolean {
-                Timber.d("TEST first query change")
                 firstDestinationAdapter.filter.filter(newText)
                 binding.scrollFirstSuggestions.visibility = View.VISIBLE
                 if (firstDestinationAdapter.isEmpty) {
@@ -250,7 +247,6 @@ class MainFragment : Fragment() {
             onSecondSearchCloseClickListener.invoke()
         }
     }
-
 
     override fun onDestroy() {
         destinationsListDisposable?.dispose()

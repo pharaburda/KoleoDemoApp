@@ -11,9 +11,7 @@ import javax.inject.Inject
 
 class MainViewModel @Inject constructor(private val repository: IRepository) : ViewModel() {
 
-    fun getDestinationsLists(): Maybe<List<Destination>> {
-        return repository.getDestinationsList()
-    }
+    fun getDestinationsLists(): Maybe<List<Destination>> = repository.getDestinationsList()
 
     fun calculateDistanceBetweenDestinations(
         firstLat: Float?,
