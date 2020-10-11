@@ -14,6 +14,7 @@ import io.reactivex.rxjava3.disposables.Disposable
 import javax.inject.Inject
 import com.example.koleodemoapp.entities.Destination
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.subjects.PublishSubject
 import timber.log.Timber
 
 
@@ -26,11 +27,20 @@ class MainFragment : Fragment() {
     @Inject
     lateinit var viewModel: MainViewModel
     private lateinit var binding: MainFragmentBinding
-    private lateinit var disposable: Disposable
+    private lateinit var destinationsListDisposable: Disposable
+
     private var firstDestinationList = mutableListOf<Destination>()
     private var secondDestinationList = mutableListOf<Destination>()
+
     private lateinit var firstDestinationAdapter: ArrayAdapter<Destination>
     private lateinit var secondDestinationAdapter: ArrayAdapter<Destination>
+
+    private var firstChosenDestination: Destination? = null
+    private var secondChosenDestination: Destination? = null
+
+    private val submittingSubject: PublishSubject<Unit> = PublishSubject.create()
+    private lateinit var submittingSubjectDisposable: Disposable
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,6 +73,21 @@ class MainFragment : Fragment() {
             secondDestinationList
         )
 
+        submittingSubjectDisposable = submittingSubject.subscribe {
+            val firstDestination = firstChosenDestination
+            val secondDestination = secondChosenDestination
+            if (firstDestination != null && secondDestination != null) {
+                 val distanceInKm = viewModel.calculateDistanceBetweenDestinations(
+                    firstDestination.latitude,
+                    firstDestination.longitude,
+                    secondDestination.latitude,
+                    secondDestination.longitude
+                )
+
+                binding.distance.text = String.format("$distanceInKm km")
+            }
+        }
+
         binding.searchFirstStation.isActivated = true
         binding.searchSecondStation.isActivated = true
 
@@ -72,7 +97,7 @@ class MainFragment : Fragment() {
         val onFirstSearchClickListener = {
             Timber.d("TEST first search click")
             if (firstDestinationList.isEmpty()) {
-                disposable = viewModel.getDestinationsLists()
+                destinationsListDisposable = viewModel.getDestinationsLists()
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe { destinations ->
                         firstDestinationList = destinations.toMutableList()
@@ -82,6 +107,7 @@ class MainFragment : Fragment() {
                         firstDestinationAdapter.addAll(firstDestinationList)
                     }
             } else {
+                firstDestinationAdapter.clear()
                 firstDestinationAdapter.addAll(firstDestinationList)
             }
         }
@@ -89,7 +115,7 @@ class MainFragment : Fragment() {
         val onSecondSearchClickListener = {
             Timber.d("TEST second search click")
             if (secondDestinationList.isEmpty()) {
-                disposable = viewModel.getDestinationsLists()
+                destinationsListDisposable = viewModel.getDestinationsLists()
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe { destinations ->
                         secondDestinationList = destinations.toMutableList()
@@ -99,6 +125,7 @@ class MainFragment : Fragment() {
                         secondDestinationAdapter.addAll(secondDestinationList)
                     }
             } else {
+                secondDestinationAdapter.clear()
                 secondDestinationAdapter.addAll(secondDestinationList)
             }
         }
@@ -119,6 +146,7 @@ class MainFragment : Fragment() {
 
         val onFirstSearchQueryTextListener = object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String?): Boolean {
+                Timber.d("TEST first query change")
                 firstDestinationAdapter.filter.filter(newText)
                 binding.scrollFirstSuggestions.visibility = View.VISIBLE
                 if (firstDestinationAdapter.isEmpty) {
@@ -129,11 +157,14 @@ class MainFragment : Fragment() {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 val destinationNames = firstDestinationList.map { it.name ?: "" }
-                val destination = destinationNames.find { it.contains(query ?: "", true) }
-                if (destination != null) {
-                    binding.searchFirstStation.setQuery(destination, false)
+                val destinationName = destinationNames.find { it.contains(query ?: "", true) }
+                if (destinationName != null) {
+                    binding.searchFirstStation.setQuery(destinationName, false)
                     firstDestinationAdapter.clear()
                     binding.scrollFirstSuggestions.visibility = View.INVISIBLE
+                    firstChosenDestination =
+                        firstDestinationList.find { it.name == destinationName }
+                    submittingSubject.onNext(Unit)
 
                 } else {
                     Toast.makeText(context, "No Match found", Toast.LENGTH_LONG).show()
@@ -154,11 +185,14 @@ class MainFragment : Fragment() {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 val destinationNames = secondDestinationList.map { it.name ?: "" }
-                val destination = destinationNames.find { it.contains(query ?: "", true) }
-                if (destination != null) {
-                    binding.searchSecondStation.setQuery(destination, false)
+                val destinationName = destinationNames.find { it.contains(query ?: "", true) }
+                if (destinationName != null) {
+                    binding.searchSecondStation.setQuery(destinationName, false)
                     secondDestinationAdapter.clear()
                     binding.scrollSecondSuggestions.visibility = View.INVISIBLE
+                    secondChosenDestination =
+                        secondDestinationList.find { it.name == destinationName }
+                    submittingSubject.onNext(Unit)
 
                 } else {
                     Toast.makeText(context, "No Match found", Toast.LENGTH_LONG).show()
@@ -187,7 +221,8 @@ class MainFragment : Fragment() {
 
         val searchCloseFirstButtonId = binding.searchFirstStation.context.resources
             .getIdentifier("android:id/search_close_btn", null, null)
-        val firstCloseButton = binding.searchFirstStation.findViewById(searchCloseFirstButtonId) as ImageView
+        val firstCloseButton =
+            binding.searchFirstStation.findViewById(searchCloseFirstButtonId) as ImageView
         firstCloseButton.setOnClickListener {
             onFirstSearchCloseClickListener.invoke()
         }
@@ -200,14 +235,16 @@ class MainFragment : Fragment() {
 
         val searchCloseSecondButtonId = binding.searchSecondStation.context.resources
             .getIdentifier("android:id/search_close_btn", null, null)
-        val secondCloseButton = binding.searchSecondStation.findViewById(searchCloseSecondButtonId) as ImageView
+        val secondCloseButton =
+            binding.searchSecondStation.findViewById(searchCloseSecondButtonId) as ImageView
         secondCloseButton.setOnClickListener {
             onSecondSearchCloseClickListener.invoke()
         }
     }
 
     override fun onDestroy() {
-        disposable.dispose()
+        destinationsListDisposable.dispose()
+        submittingSubjectDisposable.dispose()
         super.onDestroy()
     }
 }
