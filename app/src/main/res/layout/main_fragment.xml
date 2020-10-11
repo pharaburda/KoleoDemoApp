@@ -29,7 +29,8 @@
                     android:id="@+id/search_first_station"
                     android:layout_width="300dp"
                     android:layout_height="40dp"
-                    android:layout_marginBottom="10dp"/>
+                    android:layout_marginBottom="10dp"
+                    android:queryHint="Type here" />
                 <ListView
                     android:id="@+id/scroll_first_suggestions"
                     android:layout_width="300dp"
@@ -50,7 +51,8 @@
                     android:id="@+id/search_second_station"
                     android:layout_width="300dp"
                     android:layout_height="40dp"
-                    android:layout_marginBottom="10dp"/>
+                    android:layout_marginBottom="10dp"
+                    android:queryHint="Type here"/>
                 <ListView
                     android:id="@+id/scroll_second_suggestions"
                     android:layout_width="300dp"

@@ -12,4 +12,8 @@ class Destination (
     val region: String?,
     val country: String?,
     val localised_name: String?
-)
+) {
+    override fun toString(): String {
+        return name ?: ""
+    }
+}
