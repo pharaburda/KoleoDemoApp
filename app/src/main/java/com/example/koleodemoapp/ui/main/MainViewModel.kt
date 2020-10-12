@@ -6,12 +6,11 @@ import androidx.lifecycle.ViewModel
 import com.example.koleodemoapp.entities.Destination
 import com.example.koleodemoapp.repository.IRepository
 import io.reactivex.rxjava3.core.Maybe
-import timber.log.Timber
 import javax.inject.Inject
 
 class MainViewModel @Inject constructor(private val repository: IRepository) : ViewModel() {
 
-    fun getDestinationsLists(): Maybe<List<Destination>> = repository.getDestinationsList()
+    fun getDestinationsList(): Maybe<List<Destination>> = repository.getDestinationsList()
 
     fun calculateDistanceBetweenDestinations(
         firstLat: Float?,

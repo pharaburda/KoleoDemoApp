@@ -6,6 +6,4 @@ import io.reactivex.rxjava3.core.Maybe
 
 interface IRepository {
     fun getDestinationsList() : Maybe<List<Destination>>
-
-    fun getKeywordsList(): Maybe<List<Keyword>>
 }

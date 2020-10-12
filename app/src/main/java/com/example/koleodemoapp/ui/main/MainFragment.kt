@@ -95,7 +95,7 @@ class MainFragment : Fragment() {
 
         val loadDestinationsListToFirstAdapter = {
             if (firstDestinationList.isEmpty()) {
-                destinationsListDisposable = viewModel.getDestinationsLists()
+                destinationsListDisposable = viewModel.getDestinationsList()
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                         { destinations ->
@@ -118,7 +118,7 @@ class MainFragment : Fragment() {
 
         val loadDestinationsListToSecondAdapter = {
             if (secondDestinationList.isEmpty()) {
-                destinationsListDisposable = viewModel.getDestinationsLists()
+                destinationsListDisposable = viewModel.getDestinationsList()
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ destinations ->
                         secondDestinationList = destinations.toMutableList()
@@ -162,14 +162,20 @@ class MainFragment : Fragment() {
             }
 
             override fun onQueryTextSubmit(query: String?): Boolean {
-                val destinationNames = firstDestinationList.map { it.name ?: "" }
-                val destinationName = destinationNames.find { it.contains(query ?: "", true) }
-                if (destinationName != null) {
-                    binding.searchFirstStation.setQuery(destinationName, false)
+                val destinationKeywords = firstDestinationList.flatMap {
+                    it.keywords ?: emptyList()
+                }
+                val destinationKeywordName = destinationKeywords.find {
+                    it.contains(query ?: "", true)
+                }
+                if (destinationKeywordName != null) {
+                    val destination = firstDestinationList.find {
+                        it.keywords?.contains(destinationKeywordName) ?: false
+                    }
+                    binding.searchFirstStation.setQuery(destination?.name, false)
                     firstDestinationAdapter.clear()
                     binding.scrollFirstSuggestions.visibility = View.INVISIBLE
-                    firstChosenDestination =
-                        firstDestinationList.find { it.name == destinationName }
+                    firstChosenDestination = destination
                     submittingSubject.onNext(Unit)
 
                 } else {
@@ -190,14 +196,20 @@ class MainFragment : Fragment() {
             }
 
             override fun onQueryTextSubmit(query: String?): Boolean {
-                val destinationNames = secondDestinationList.map { it.name ?: "" }
-                val destinationName = destinationNames.find { it.contains(query ?: "", true) }
-                if (destinationName != null) {
-                    binding.searchSecondStation.setQuery(destinationName, false)
+                val destinationKeywords = secondDestinationList.flatMap {
+                    it.keywords ?: emptyList()
+                }
+                val destinationKeywordName = destinationKeywords.find {
+                    it.contains(query ?: "", true)
+                }
+                if (destinationKeywordName != null) {
+                    val destination = secondDestinationList.find {
+                        it.keywords?.contains(destinationKeywordName) ?: false
+                    }
+                    binding.searchSecondStation.setQuery(destination?.name, false)
                     secondDestinationAdapter.clear()
                     binding.scrollSecondSuggestions.visibility = View.INVISIBLE
-                    secondChosenDestination =
-                        secondDestinationList.find { it.name == destinationName }
+                    secondChosenDestination = destination
                     submittingSubject.onNext(Unit)
 
                 } else {
